@@ -1,0 +1,31 @@
+24.04.16
+
+UML 상 클래스(껍데기) 구현
+	CompressedFile
+	IPreviewedFile
+	ICompressManager
+
+IPreviewedFile 및 ICompressManager Rust 모듈기능을 사용하여 카테고라이징
+
+#[cfg(debug_assertions)] 플래그 필요한 곳에 추가
+
+vscode 설정
+	금일 설정 내용 추가
+
+이후 작업
+    핵심기능인 CompressedFile.DeleteFile 구현을 위해 ICompressedManager 인터페이스 변경이 필요
+    Delete 기능 구현 및 DLL화 이후 프리뷰 작업 예정
+    Delete 기능 구현
+		Rust용 압축 모듈(혹은 C DLL로 구현된 압축 라이브러리) 적용
+		delete 기능 구현 후 테스트 환경 구축
+			임의의 압축파일을 프로젝트에 추가하여 구성 예정
+    DLL
+		DLL 화 및 실제 동작을 위한 DLL 프로세스 수정 필요
+			현재 Open 함수 리턴 시 CompressedFile 객체 소멸할 것으로 추정됨
+			프로세스에서 동적 객체 1개를 프로세스 종료시까지 유지하도록 구현 필요
+		Cpp or C#에서 DLL 테스트 프로젝트 생성 예정
+    프리뷰 기능
+		해당 기능 구현을 위해 IPreviewedFile 인터페이스에 메소드 추가 필요
+		
+
+	

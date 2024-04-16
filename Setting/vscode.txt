@@ -1,0 +1,64 @@
+인레이 힌트 on/off
+
+    need to setting cycler(Cody Hoover)
+        https://marketplace.visualstudio.com/items?itemName=hoovercj.vscode-settings-cycler
+
+        {
+            "key": "alt+backspace", // key to press to activate command
+            "command": "settings.cycle", // `settings.cycle` is the command that's actually being run, from the extension `hoovercj.vscode-settings-cycler`
+            "when": "editorTextFocus && editorLangId == 'rust'", // this keybinding is only active when (editor is in focus) and (the language is `rust`)
+            "args": { // these are the arguments passed to `settings.cycle`
+            "id": "editor-toggle-inlay-hints", // must be unique
+            "overrideWorkspaceSettings": true,
+            "values": [ // Note: use the same settings in each values object
+                {
+                "editor.inlayHints.enabled": "on" // sets the inlay hints off
+                },
+                {
+                "editor.inlayHints.enabled": "off" // sets the inlay hints on
+                }
+            ]
+            }
+        },
+
+러스트 빌드 task.json
+    Trigger Task on Save 확장 사용(빌드 전 저장)
+
+    {
+        "version": "2.0.0",
+        
+        "type": "shell",
+        "presentation": {
+            "echo": true,
+            "reveal": "silent",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": false,
+            "clear": true
+        },
+        "problemMatcher": [
+            "$rustc"
+        ],
+        
+        "triggerTaskOnSave.on": true,
+
+        "tasks": [
+            {
+                "type": "cargo",
+                //"command": "build --manifest-path CFMCore/Cargo.toml",
+                "command": "build",
+                "options": {
+                    "cwd": "${workspaceFolder}\\CFMCore\\"
+                },
+                // "args": [
+                // 	""
+                // ],
+                "problemMatcher": [
+                    "$rustc"
+                ],
+                "group": "build",
+                "label": "rust: cargo build"
+                
+            }
+        ]
+    }
