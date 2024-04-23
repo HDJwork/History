@@ -1,0 +1,346 @@
+24.04.23
+
+miniz DLL을 통한 Read 동작 구현
+    GetFileList 함수 동작 확인 및 테스트
+        인코딩 이슈가 발생하여 수정
+    dll 디버깅을 편하게 하기 위한 api 테스트용 c++ 프로젝트 생성
+
+miniz 라이브러리 기능 분석
+    핵심 기능인 delete 구현을 위해서 필수적으로 파일로 압축 해제 후 재압축이 필요한 것으로 보임
+    따라서 아래의 기능을 함수로 구현 필요
+        0. 특정 임시폴더 지정(생성) 및 초기화(모든 파일 삭제)
+        1. 임시폴더에 압축 해제
+        2. 틀정 폴더를 압축하여 압축파일 생성
+        3. 임시폴더 제거
+        * 1 or 2 에서 특정 파일을 배제하는 기능 포함
+        ** 파일 추가 기능 구현 시 1-2 사이에 폴더로 파일 복사하는 기능 구현
+        *** 미리보기 기능을 생각하면 0 기능 구현 유무 확인 필요
+    미리 보기 기능 구현을 위해 특정 파일만 압축 해제하는 기능 구현 필요
+        파일로 저장할지 메모리에서 가지고 있을 지 여부 확인 필요
+        * 파일로 저장하는 것이 이후 메모리 관리 차원에서 유리할 것으로 보임
+
+
+이후 작업
+    miniz 라이브러리를 통해 압축 및 압축 해제 동작 테스트
+        암호화 관련하여 동작이 불가능 할 경우 라이브러리 변경 필요
+    miniz DLL을 통한 Read 동작 구현
+        미리보기 기능 미구현
+    테스트 코드 실제 코드에 이식
+
+    ***
+    핵심기능인 CompressedFile.DeleteFile 구현을 위해 ICompressedManager 인터페이스 변경이 필요
+    Delete 기능 구현 및 DLL화 이후 프리뷰 작업 예정
+    Delete 기능 구현
+		Rust용 압축 모듈(혹은 C DLL로 구현된 압축 라이브러리) 적용
+		delete 기능 구현 후 테스트 환경 구축
+			임의의 압축파일을 프로젝트에 추가하여 구성 예정
+    DLL
+		DLL 화 및 실제 동작을 위한 DLL 프로세스 수정 필요
+			현재 Open 함수 리턴 시 CompressedFile 객체 소멸할 것으로 추정됨
+			프로세스에서 동적 객체 1개를 프로세스 종료시까지 유지하도록 구현 필요
+		Cpp or C#에서 DLL 테스트 프로젝트 생성 예정
+    프리뷰 기능
+		해당 기능 구현을 위해 IPreviewedFile 인터페이스에 메소드 추가 필요
+
+
+chat gpt 참고 코드
+* 압축 해제
+#include <stdio.h>
+#include "miniz.h"
+
+int main() {
+    FILE *zip_file = fopen("compressed_file.zip", "rb");
+    if (!zip_file) {
+        printf("Error: Failed to open zip file.\n");
+        return 1;
+    }
+
+    fseek(zip_file, 0, SEEK_END);
+    size_t zip_size = ftell(zip_file);
+    fseek(zip_file, 0, SEEK_SET);
+
+    unsigned char *zip_buffer = (unsigned char *)malloc(zip_size);
+    if (!zip_buffer) {
+        printf("Error: Memory allocation failed.\n");
+        fclose(zip_file);
+        return 1;
+    }
+
+    if (fread(zip_buffer, 1, zip_size, zip_file) != zip_size) {
+        printf("Error: Failed to read zip file.\n");
+        fclose(zip_file);
+        free(zip_buffer);
+        return 1;
+    }
+
+    fclose(zip_file);
+
+    mz_zip_archive zip_archive;
+    memset(&zip_archive, 0, sizeof(zip_archive));
+
+    if (!mz_zip_reader_init_mem(&zip_archive, zip_buffer, zip_size, 0)) {
+        printf("Error: Failed to initialize zip reader.\n");
+        free(zip_buffer);
+        return 1;
+    }
+
+    int num_files = mz_zip_reader_get_num_files(&zip_archive);
+    for (int i = 0; i < num_files; ++i) {
+        mz_zip_archive_file_stat file_stat;
+        if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat)) {
+            printf("Error: Failed to read file info from zip.\n");
+            mz_zip_reader_end(&zip_archive);
+            free(zip_buffer);
+            return 1;
+        }
+
+        unsigned char *file_buffer = (unsigned char *)malloc(file_stat.m_uncomp_size);
+        if (!file_buffer) {
+            printf("Error: Memory allocation failed for file.\n");
+            mz_zip_reader_end(&zip_archive);
+            free(zip_buffer);
+            return 1;
+        }
+
+        if (!mz_zip_reader_extract_to_mem(&zip_archive, i, file_buffer, file_stat.m_uncomp_size, 0)) {
+            printf("Error: Failed to extract file from zip.\n");
+            mz_zip_reader_end(&zip_archive);
+            free(zip_buffer);
+            free(file_buffer);
+            return 1;
+        }
+
+        FILE *output_file = fopen(file_stat.m_filename, "wb");
+        if (!output_file) {
+            printf("Error: Failed to create output file.\n");
+            mz_zip_reader_end(&zip_archive);
+            free(zip_buffer);
+            free(file_buffer);
+            return 1;
+        }
+
+        if (fwrite(file_buffer, 1, file_stat.m_uncomp_size, output_file) != file_stat.m_uncomp_size) {
+            printf("Error: Failed to write output file.\n");
+            fclose(output_file);
+            mz_zip_reader_end(&zip_archive);
+            free(zip_buffer);
+            free(file_buffer);
+            return 1;
+        }
+
+        fclose(output_file);
+        free(file_buffer);
+    }
+
+    mz_zip_reader_end(&zip_archive);
+    free(zip_buffer);
+
+    printf("Extraction complete.\n");
+    return 0;
+}
+
+압축
+#include <stdio.h>
+#include <string.h>
+#include "miniz.h"
+
+void add_folder_to_zip(const char *folder_path, mz_zip_archive *zip_archive) {
+    char search_path[256];
+    snprintf(search_path, sizeof(search_path), "%s/*", folder_path);
+
+    #if defined(_MSC_VER)
+    intptr_t handle;
+    struct _finddata_t file_info;
+    handle = _findfirst(search_path, &file_info);
+    if (handle == -1) {
+        return;
+    }
+    do {
+        char file_path[256];
+        snprintf(file_path, sizeof(file_path), "%s/%s", folder_path, file_info.name);
+        if (file_info.attrib & _A_SUBDIR) {
+            if (strcmp(file_info.name, ".") != 0 && strcmp(file_info.name, "..") != 0) {
+                add_folder_to_zip(file_path, zip_archive);
+            }
+        } else {
+            mz_zip_add_file(zip_archive, file_info.name, file_path, NULL, 0, MZ_BEST_COMPRESSION);
+        }
+    } while (_findnext(handle, &file_info) == 0);
+    _findclose(handle);
+    #else
+    DIR *dir;
+    struct dirent *entry;
+    struct stat file_info;
+    dir = opendir(folder_path);
+    if (!dir) {
+        return;
+    }
+    while ((entry = readdir(dir)) != NULL) {
+        char file_path[256];
+        snprintf(file_path, sizeof(file_path), "%s/%s", folder_path, entry->d_name);
+        if (stat(file_path, &file_info) == 0) {
+            if (S_ISDIR(file_info.st_mode)) {
+                if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                    add_folder_to_zip(file_path, zip_archive);
+                }
+            } else {
+                mz_zip_add_file(zip_archive, entry->d_name, file_path, NULL, 0, MZ_BEST_COMPRESSION);
+            }
+        }
+    }
+    closedir(dir);
+    #endif
+}
+
+int main() {
+    const char *folder_path = "your_folder_path"; // 압축할 폴더의 경로로 바꿔주세요
+    const char *zip_filename = "compressed_folder.zip"; // 압축 파일의 이름으로 원하는 이름으로 바꿔주세요
+
+    mz_zip_archive zip_archive;
+    memset(&zip_archive, 0, sizeof(zip_archive));
+    if (!mz_zip_writer_init_file(&zip_archive, zip_filename, 0)) {
+        printf("Error: Failed to initialize zip writer.\n");
+        return 1;
+    }
+
+    add_folder_to_zip(folder_path, &zip_archive);
+
+    if (!mz_zip_writer_finalize_archive(&zip_archive)) {
+        printf("Error: Failed to finalize zip archive.\n");
+        mz_zip_writer_end(&zip_archive);
+        return 1;
+    }
+
+    mz_zip_writer_end(&zip_archive);
+    printf("Compression complete.\n");
+    return 0;
+}
+
+특정 파일 제외 후 재압축
+#include <stdio.h>
+#include <string.h>
+#include "miniz.h"
+
+void add_files_to_zip(const char *folder_path, mz_zip_archive *zip_archive, const char *exclude_filename) {
+    char search_path[256];
+    snprintf(search_path, sizeof(search_path), "%s/*", folder_path);
+
+    #if defined(_MSC_VER)
+    intptr_t handle;
+    struct _finddata_t file_info;
+    handle = _findfirst(search_path, &file_info);
+    if (handle == -1) {
+        return;
+    }
+    do {
+        char file_path[256];
+        snprintf(file_path, sizeof(file_path), "%s/%s", folder_path, file_info.name);
+        if (strcmp(file_info.name, exclude_filename) != 0) {
+            if (file_info.attrib & _A_SUBDIR) {
+                if (strcmp(file_info.name, ".") != 0 && strcmp(file_info.name, "..") != 0) {
+                    add_files_to_zip(file_path, zip_archive, exclude_filename);
+                }
+            } else {
+                mz_zip_add_file(zip_archive, file_info.name, file_path, NULL, 0, MZ_BEST_COMPRESSION);
+            }
+        }
+    } while (_findnext(handle, &file_info) == 0);
+    _findclose(handle);
+    #else
+    DIR *dir;
+    struct dirent *entry;
+    struct stat file_info;
+    dir = opendir(folder_path);
+    if (!dir) {
+        return;
+    }
+    while ((entry = readdir(dir)) != NULL) {
+        char file_path[256];
+        snprintf(file_path, sizeof(file_path), "%s/%s", folder_path, entry->d_name);
+        if (strcmp(entry->d_name, exclude_filename) != 0) {
+            if (stat(file_path, &file_info) == 0) {
+                if (S_ISDIR(file_info.st_mode)) {
+                    if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                        add_files_to_zip(file_path, zip_archive, exclude_filename);
+                    }
+                } else {
+                    mz_zip_add_file(zip_archive, entry->d_name, file_path, NULL, 0, MZ_BEST_COMPRESSION);
+                }
+            }
+        }
+    }
+    closedir(dir);
+    #endif
+}
+
+int main() {
+    const char *source_zip_filename = "source.zip"; // 원본 압축 파일의 이름으로 바꿔주세요
+    const char *exclude_filename = "exclude.txt"; // 제외할 파일의 이름으로 바꿔주세요
+    const char *output_zip_filename = "recompressed.zip"; // 재압축된 파일의 이름으로 원하는 이름으로 바꿔주세요
+
+    mz_zip_archive source_zip_archive;
+    memset(&source_zip_archive, 0, sizeof(source_zip_archive));
+    if (!mz_zip_reader_init_file(&source_zip_archive, source_zip_filename, 0)) {
+        printf("Error: Failed to initialize source zip reader.\n");
+        return 1;
+    }
+
+    mz_zip_archive output_zip_archive;
+    memset(&output_zip_archive, 0, sizeof(output_zip_archive));
+    if (!mz_zip_writer_init_file(&output_zip_archive, output_zip_filename, 0)) {
+        printf("Error: Failed to initialize output zip writer.\n");
+        mz_zip_reader_end(&source_zip_archive);
+        return 1;
+    }
+
+    int num_files = mz_zip_reader_get_num_files(&source_zip_archive);
+    for (int i = 0; i < num_files; ++i) {
+        mz_zip_archive_file_stat file_stat;
+        if (!mz_zip_reader_file_stat(&source_zip_archive, i, &file_stat)) {
+            printf("Error: Failed to read file info from source zip.\n");
+            mz_zip_reader_end(&source_zip_archive);
+            mz_zip_writer_end(&output_zip_archive);
+            return 1;
+        }
+
+        if (strcmp(file_stat.m_filename, exclude_filename) != 0) {
+            void *file_buffer = malloc(file_stat.m_uncomp_size);
+            if (!file_buffer) {
+                printf("Error: Memory allocation failed for file.\n");
+                mz_zip_reader_end(&source_zip_archive);
+                mz_zip_writer_end(&output_zip_archive);
+                return 1;
+            }
+
+            if (!mz_zip_reader_extract_to_mem(&source_zip_archive, i, file_buffer, file_stat.m_uncomp_size, 0)) {
+                printf("Error: Failed to extract file from source zip.\n");
+                mz_zip_reader_end(&source_zip_archive);
+                mz_zip_writer_end(&output_zip_archive);
+                free(file_buffer);
+                return 1;
+            }
+
+            if (!mz_zip_add_mem(&output_zip_archive, file_stat.m_filename, file_buffer, file_stat.m_uncomp_size, MZ_BEST_COMPRESSION)) {
+                printf("Error: Failed to add file to output zip.\n");
+                mz_zip_reader_end(&source_zip_archive);
+                mz_zip_writer_end(&output_zip_archive);
+                free(file_buffer);
+                return 1;
+            }
+
+            free(file_buffer);
+        }
+    }
+
+    mz_zip_reader_end(&source_zip_archive);
+
+    if (!mz_zip_writer_finalize_archive(&output_zip_archive)) {
+        printf("Error: Failed to finalize output zip archive.\n");
+        mz_zip_writer_end(&output_zip_archive);
+        return 1;
+    }
+
+    mz_zip_writer_end(&output_zip_archive);
+    printf("Recompression complete.\n");
+    return 0;
+}
