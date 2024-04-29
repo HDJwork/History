@@ -1,0 +1,42 @@
+24.04.29
+
+Rust 코드에 miniz DLL 임포트
+    테스트 코드를 CFMCore에 이식
+    가독성 및 추가 작업 편이성을 위해 코드 형태 변경
+    함수 래핑 확인(동작 미확인)
+    
+DLL 컨트롤을 위한 싱글톤 클래스 생성에 대하여 작업 및 테스트
+    C DLL 콜 에 대한 처리이므로 Load/Unload에 대한 직접적인 관리가 필요하다고 판단
+    일반적으로 Runtime과 lifecycle을 함께하는 객체를 Singleton으로 처리해왔음
+    서칭 결과 Rust 에서는 함수형 언어 특성상 singleton 객체 사용이 권장되지 않음
+    일단 Singleton 사용하는 쪽으로 결정 (이하 판단 사유)
+        main에 컴포넌트를 두고 객체를 패싱하는 방식은 변경에 취약하고 가독성을 떨어트린다고 판단
+        언어 차원의 thread safety 또한 DLL 콜 특성상 thread safety를 보장하는 것은 원칙적으로 불가능하다고 판단
+        현재 테스트 코드는 싱글스레드 프로그램
+    최초 lazy_static! 매크로를 사용하여 구현
+        소멸자 호출을 개발자가 확인할 수 없음
+        테스트 코드를 통해 확인 결과 lazy_static! 사용시 소멸자 호출 확인 불가
+    static 레퍼런스로 구현 및 cleanup 처리 수동 호출하도록 수정
+        이전 MFC에서 DLL unload 시 debug output 누락되는 경험을 토대로 cleanup 코드 수동 작성하는 방식 적용
+    
+
+
+이후 작업
+    Rust DLL 구현
+        C DLL 호출 테스트
+        uml에 따라 미구현 사항 구현
+            - delete 등 메소드
+            - preview 인터페이스
+    
+    DLL 빌드
+    UI 작업
+
+    ***
+    DLL
+		DLL 화 및 실제 동작을 위한 DLL 프로세스 수정 필요
+			현재 Open 함수 리턴 시 CompressedFile 객체 소멸할 것으로 추정됨
+			프로세스에서 동적 객체 1개를 프로세스 종료시까지 유지하도록 구현 필요
+		Cpp or C#에서 DLL 테스트 프로젝트 생성 예정
+    프리뷰 기능
+		해당 기능 구현을 위해 IPreviewedFile 인터페이스에 메소드 추가 필요
+
