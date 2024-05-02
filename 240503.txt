@@ -1,0 +1,35 @@
+24.05.03
+
+C DLL 관련 모듈(타입, 함수) 위치 변경
+    DLL Export에 대해서 동일한 타입 및 일부 함수 사용됨
+
+Rust dll 빌드
+    DLL 함수 작성중
+        작업완료
+            Startup
+            Cleanup
+            Open
+            Close
+            GetFileCount
+            GetFile
+        * 동적 객체 생성 및 핸들 리턴하는 코드 테스트에 시간 소요됨
+    테스트 코드 작성중
+        작성 완료 된 함수 중 open->getFile->close 함수 테스트        
+        
+
+이후 작업
+    Rust DLL 빌드
+        DLL API 작성(계속)
+        C# import 테스트
+        
+    릴리즈 빌드 테스트
+
+    UI 작업
+
+    ***
+    DLL
+		DLL 화 및 실제 동작을 위한 DLL 프로세스 수정 필요
+			현재 Open 함수 리턴 시 CompressedFile 객체 소멸할 것으로 추정됨
+			프로세스에서 동적 객체 1개를 프로세스 종료시까지 유지하도록 구현 필요
+		Cpp or C#에서 DLL 테스트 프로젝트 생성 예정
+
