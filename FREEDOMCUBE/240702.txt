@@ -1,13 +1,41 @@
 24.07.02
 
-작업 예정
-    c++ 스크립트
-        데이터 모델 구축
-            렌더링 및 레이 피킹을 고려해야 함
-        클리어 판정
-        셔플
-        인풋 처리
-            레이 피킹
+UML 클래스 다이어그램 작성
+
+UML 기반 작업 내역
+    메시/마테리얼 생성 코드 분리
+    생성/초기화
+        CubeBlock 및 BlockManager를 추가한 형태로 CreateCubeN 함수 수정
+            위치 정보를 분리하여 CubeBlock에 설정
+            FaceDirection 및 블록 위치 정보(BlockManager::blocks) 설정
+        각 getter 함수 작성
+        렌더링 결과 테스트
+    BlockManager 및 CubeBlock 회전 함수 작성
+        CubeBlock 회전에 따른 상태 변경 처리
+        Tick 및 CubeBlock::IsRotating 처리
+        테스트 기능 작성 및 테스트
+    BlockManager::TryRotate 함수 작성
+        BlockManager::CheckRotationTarget 함수 작성
+        테스트 기능 작성 및 테스트
+    AGubeGameSystem 이벤트 핸들러 수정
+        레이 피킹을 통해 TryRotate 함수 호출
+    BlockManager::IsGameClear 함수 작성
+        테스트
+
+이후 작업
+    자동 셔플 기능
+    roll 회전 UI 추가
+    GameInstance 정보 반영
+
+
+//작업 예정
+//    c++ 스크립트
+//        데이터 모델 구축
+//            렌더링 및 레이 피킹을 고려해야 함
+//        클리어 판정
+//        셔플
+//        인풋 처리
+//            레이 피킹
 
 ---------------------------------------------------------------------------------------------------------------
 작업 예정
