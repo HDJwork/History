@@ -3,10 +3,10 @@
 UML 클래스 다이어그램 작성
 
 UML 기반 작업 내역
-    메시/마테리얼 생성 코드 분리
+    메시/마테리얼 생성 코드 분리                                            <-완료
     생성/초기화
-        CubeBlock 및 BlockManager를 추가한 형태로 CreateCubeN 함수 수정
-            위치 정보를 분리하여 CubeBlock에 설정
+        CubeBlock 및 BlockManager를 추가한 형태로 CreateCubeN 함수 수정     <-완료
+            위치 정보를 분리하여 CubeBlock에 설정                           <-완료
             FaceDirection 및 블록 위치 정보(BlockManager::blocks) 설정
         각 getter 함수 작성
         렌더링 결과 테스트
@@ -22,7 +22,11 @@ UML 기반 작업 내역
     BlockManager::IsGameClear 함수 작성
         테스트
 
+* 회전 시 렌더링을 위해 은면 Face 생성 추가
+
 이후 작업
+    * 블록 및 페이스 생성 시 백페이스 처리
+
     자동 셔플 기능
     roll 회전 UI 추가
     GameInstance 정보 반영
