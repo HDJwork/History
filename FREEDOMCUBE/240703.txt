@@ -1,18 +1,24 @@
 24.07.03
 
+작업 내역
+    블록 및 페이스 생성 시 백페이스(Unknown) 처리
+    UML 기반 작업 완료 내역
+        메시/마테리얼 생성 코드 분리
+        생성/초기화
+            CubeBlock 및 BlockManager를 추가한 형태로 CreateCubeN 함수 수정
+                위치 정보를 분리하여 CubeBlock에 설정
+                FaceDirection 및 블록 위치 정보(BlockManager::blocks) 설정
+            각 getter 함수 작성
+            렌더링 결과 테스트
+        BlockManager 및 CubeBlock 회전 함수 작성
+            CubeBlock 회전에 따른 상태 변경 처리
+            Tick 및 CubeBlock::IsRotating 처리
+            테스트 기능 작성 및 테스트
+                키 입력(1,2,3)으로 각 축 회전하도록 블루프린트에서 작성
+        BlockManager 및 CubeBlock 회전 함수 작성
+            CubeBlock 회전에 따른 상태 변경 처리
 
 UML 기반 작업 내역
-    메시/마테리얼 생성 코드 분리                                            <-완료
-    생성/초기화
-        CubeBlock 및 BlockManager를 추가한 형태로 CreateCubeN 함수 수정     <-완료
-            위치 정보를 분리하여 CubeBlock에 설정                           <-완료
-            FaceDirection 및 블록 위치 정보(BlockManager::blocks) 설정
-        각 getter 함수 작성
-        렌더링 결과 테스트
-    BlockManager 및 CubeBlock 회전 함수 작성
-        CubeBlock 회전에 따른 상태 변경 처리
-        Tick 및 CubeBlock::IsRotating 처리
-        테스트 기능 작성 및 테스트
     BlockManager::TryRotate 함수 작성
         BlockManager::CheckRotationTarget 함수 작성
         테스트 기능 작성 및 테스트
@@ -21,14 +27,20 @@ UML 기반 작업 내역
     BlockManager::IsGameClear 함수 작성
         테스트
 
-* 회전 시 렌더링을 위해 은면 Face 생성 추가
 
 이후 작업
-    * 블록 및 페이스 생성 시 백페이스 처리
-
     자동 셔플 기능
     roll 회전 UI 추가
     GameInstance 정보 반영
+    회전 불가 시 딜레이 처리
+
+추가기능검토
+    회전 속도 관련 처리
+        드래그중일때 움직인만큼만 회전
+        드래그 완료 시 끝까지
+        초과 회전 시 원상복구
+
+    
 
 
 //작업 예정
@@ -46,9 +58,6 @@ UML 기반 작업 내역
 프로젝트 구성
     레벨 구성
         인게임
-타이틀 작업
-    모드 설정
-    레벨 전환
 인게임
     레벨
         조명 및 셰이딩 처리
@@ -75,3 +84,8 @@ UML 기반 작업 내역
         큐브 회전과 화면 회전 조작법을 스위칭
     튜토리얼 제공
     기록 저장
+
+    회전 속도 관련 처리
+        드래그중일때 움직인만큼만 회전
+        드래그 완료 시 끝까지
+        초과 회전 시 원상복구
