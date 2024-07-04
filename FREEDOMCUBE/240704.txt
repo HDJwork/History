@@ -1,21 +1,31 @@
 24.07.04
 
+작업 완료
+    UML 기반 작업 예정 내역
+        BlockManager::TryRotate 함수 작성
+            BlockManager::CheckRotationTarget 함수 작성
+            테스트 기능 작성 및 테스트
+        AGubeGameSystem 이벤트 핸들러 수정
+            레이 피킹을 통해 TryRotate 함수 호출
+        BlockManager::IsGameClear 함수 작성
+            테스트
 
-UML 기반 작업 예정 내역
-    BlockManager::TryRotate 함수 작성
-        BlockManager::CheckRotationTarget 함수 작성
-        테스트 기능 작성 및 테스트
-    AGubeGameSystem 이벤트 핸들러 수정
-        레이 피킹을 통해 TryRotate 함수 호출
-    BlockManager::IsGameClear 함수 작성
-        테스트
+*위치 관계 처리를 위해 CubeBlock이 xyz값 및 setter/getter 갖도록 수정
+
 
 
 이후 작업
     자동 셔플 기능
     roll 회전 UI 추가
-    GameInstance 정보 반영
+    게임 룰 추가
+        GameInstance 정보 반영
+            Manual 시 UI 추가
+            auto 시 자동 게임 시작
+            manual 시 ui 추가하여 수동 셔플 후 게임 시작
+        게임 시작 시 타이머 추가
+        클리어 시 UI 추가
     회전 불가 시 딜레이 처리
+    광고 추가
 
 추가기능검토
     회전 속도 관련 처리
